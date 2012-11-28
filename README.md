@@ -3,7 +3,7 @@ delitulmin-sourcezone
 
 Repository with projects Java
 
-It repository contains currently a progress bar for the shell of windows and linux for applications java
+It repository will contain a progress bar for the shell of windows and linux for applications java
 
 Use:
   1. Get the bar progress with:
