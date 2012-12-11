@@ -129,7 +129,7 @@ public class ProgressBarShell {
 			
 			//1.Limpiamos la pantalla
 			try {
-				initialProgressBar();
+				refreshProgressBar();
 			} catch (Exception ex) {
 				closeShell();
 				throw new RuntimeException(ex);
@@ -145,11 +145,11 @@ public class ProgressBarShell {
 					{
 						if (points > MAX_POINTER ) {
 							//3A.Si llegamos al maximo comenzamos de nuevo
-							progressBarArray = resume(progressBarArray);
+							progressBarArray = resume();
 							points = 1;
 						} else {
 							//3B.Realizamos el progreso de la barra
-							progressBarArray = advanceProgressBar(points, progressBarArray);
+							advanceProgressBar(points, progressBarArray);
 							points++;
 						}
 						monitor.wait(100);
@@ -172,7 +172,7 @@ public class ProgressBarShell {
 			print.print("\n");
 		}
 		
-		private void initialProgressBar() throws IOException 
+		private void refreshProgressBar() throws IOException 
 		{
 			doClearShell();
 			print.write(this.clearShell.toByteArray());
@@ -181,9 +181,8 @@ public class ProgressBarShell {
 		
 		private String finishProgressBar() throws IOException 
 		{
-			char[] progressBarArray;
-			initialProgressBar();
-			progressBarArray = doProgressBar(CHARACTER_END_PROGRESS, "100%");
+			refreshProgressBar();
+			char[] progressBarArray = doProgressBar(CHARACTER_END_PROGRESS, "100%");
 			
 			String textProgressBar = new String(progressBarArray);
 			print.println(textProgressBar);
@@ -191,11 +190,11 @@ public class ProgressBarShell {
 			return textProgressBar;
 		}
 		
-		private char[] advanceProgressBar(int points, char[] progressBarArray) throws IOException 
+		private void advanceProgressBar(int points, char[] progressBarArray) throws IOException 
 		{
-			initialProgressBar();
-			progressBarArray[points]=CHARACTER_END_PROGRESS;
-			
+			refreshProgressBar();			
+			progressBarArray[points] = CHARACTER_END_PROGRESS;
+
 			//Calculamos el porciento
 			double percent  = percent(points,0);
 			
@@ -206,14 +205,12 @@ public class ProgressBarShell {
 			textFine       += " "+percent+"%";
 			
 			print.println(textFine);
-			
-			return progressBarArray;
 		}
 		
-		private char[] resume(char[] progressBarArray) throws IOException 
+		private char[] resume() throws IOException 
 		{
-			initialProgressBar();
-			progressBarArray = doProgressBar(CHARACTER_BEGIN_PROGRESS, "  0%");
+			refreshProgressBar();
+			char[] progressBarArray = doProgressBar(CHARACTER_BEGIN_PROGRESS, "  0%");
 			print.print(new String(progressBarArray));
 			return progressBarArray;
 		}
