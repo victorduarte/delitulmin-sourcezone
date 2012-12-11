@@ -1,10 +1,9 @@
 package org.source;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
-
 /**
  * Clase para la creación de la barra de progreso en Shell.
  * 
@@ -46,10 +45,10 @@ public class ProgressBarShell {
 	private static final int MAX_POINTER = 60;
 	
 	// Caracteres para la barra de progreso.
-	private static final char CHARACTER_END_BAR        =']';
 	private static final char CHARACTER_BEGIN_BAR      ='[';
-	private static final char CHARACTER_END_PROGRESS   = '|';
+	private static final char CHARACTER_END_BAR        =']';
 	private static final char CHARACTER_BEGIN_PROGRESS = '-';
+	private static final char CHARACTER_END_PROGRESS   = '|';
 	
 	// Mensajes a mostrar.
 	private static String MESSAGE_MAIN   = "It's executing:\n\n";
@@ -59,36 +58,33 @@ public class ProgressBarShell {
 	private InnerProgressBar createInnerProgressBar () 
 	{return new InnerProgressBar();}
 	
-	private InnerProgressBar createInnerProgressBar ( String message ) 
-	{return new InnerProgressBar( message );}
+	private InnerProgressBar createInnerProgressBar (String message) 
+	{return new InnerProgressBar(message);}
 	
 	private static InnerProgressBar monitorPbs = null;
 	public synchronized static void createProgressBar ( String message ) throws Exception 
 	{	
-		if ( monitorPbs != null ) 
-			 throw new RuntimeException( ProgressBarShell.class.getName() + " is already running ..." );
+		if (monitorPbs!=null) 
+			throw new RuntimeException(ProgressBarShell.class.getName() + " is already running ...");
 
 		MESSAGE_RETURN = null;
-		
 		if ( message == null || message.isEmpty() ) {
-			 monitorPbs = new ProgressBarShell().createInnerProgressBar();
+			monitorPbs = new ProgressBarShell().createInnerProgressBar();
 		} else {
-			 monitorPbs = new ProgressBarShell().createInnerProgressBar( message );
+			monitorPbs = new ProgressBarShell().createInnerProgressBar( message );
 		}
-		
 		Thread th = new Thread( monitorPbs );
 		th.start();
 	}
 	
 	public synchronized static String finish ( String message ) throws Exception
 	{
-		if ( monitorPbs == null ) 
-			 throw new RuntimeException ( ProgressBarShell.class.getName() + " is not running ..." );
+		if (monitorPbs==null) 
+			throw new RuntimeException ( ProgressBarShell.class.getName() + " is not running ..." );
 		
-		monitorPbs.doFinish ( message );
+		monitorPbs.doFinish(message);
 		monitorPbs.doMessageFinish();
 		monitorPbs = null;
-		
 		return MESSAGE_RETURN;
 	}
 	
@@ -105,112 +101,131 @@ public class ProgressBarShell {
 		private ByteArrayOutputStream clearShell = null;
 		
 		private InnerProgressBar() {}
-		private InnerProgressBar( String message ) 
-		{ MESSAGE_MAIN = message + "\n"; }
+		private InnerProgressBar(String message){MESSAGE_MAIN = message + "\n";}
 		
 		private boolean start = true;
 		private void doFinish ( String messageFinish ) 
 		{
 			synchronized (monitor) {
 				MESSAGE_FINISH = messageFinish;
-				this.start     = false;
+				this.start = false;
 			}
 		}
 
 		private String doMessageFinish () throws Exception 
 		{
-			while ( MESSAGE_RETURN == null ) {
-				synchronized ( monitor ) {
-					monitor.wait( 500 );
+			while (MESSAGE_RETURN == null) {
+				synchronized (monitor) {
+					monitor.wait(500);
 				}
 			}
 			return MESSAGE_RETURN;
 		}
 		
 		@Override
-		public void run() 
-		{
+		public void run() {
+			
 			int points = 1;
 			
 			//1.Limpiamos la pantalla
 			try {
-				doClearShell();
-				print.write( this.clearShell.toByteArray() );
-				print.print( MESSAGE_MAIN );
-			} catch ( Exception ex ) {
+				initialProgressBar();
+			} catch (Exception ex) {
 				closeShell();
-				throw new RuntimeException( ex );
+				throw new RuntimeException(ex);
 			}
 			
 			//2.Creamos la barra de progreso
-			char[] charArray = doProgressBar ( CHARACTER_BEGIN_PROGRESS, "  0%" );
+			char[] progressBarArray = doProgressBar(CHARACTER_BEGIN_PROGRESS, "  0%");
 			
 			//3.Avanzamos la barra de progreso
 			while ( start ) {
-				try { synchronized ( monitor ) {
-						if ( points > MAX_POINTER ) {
+				try { 
+					synchronized ( monitor ) 
+					{
+						if (points > MAX_POINTER ) {
 							//3A.Si llegamos al maximo comenzamos de nuevo
-							doClearShell();
-							print.write( this.clearShell.toByteArray() );
-							print.print( MESSAGE_MAIN );
-							charArray = doProgressBar( CHARACTER_BEGIN_PROGRESS, "  0%" );
-							print.print( new String( charArray ) );
+							progressBarArray = resume(progressBarArray);
 							points = 1;
 						} else {
 							//3B.Realizamos el progreso de la barra
-							doClearShell();
-							print.write( this.clearShell.toByteArray() );
-							print.print( MESSAGE_MAIN );
-							charArray[ points ] = CHARACTER_END_PROGRESS;
-							
-							//Calculamos el porciento
-							double percent  = percent( points, 0 );
-							
-							//Actualizamos el porciento en el texto
-							String textFine = new String( charArray );
-							
-							int lastClasp   = textFine.lastIndexOf( CHARACTER_END_BAR );
-							textFine        = textFine.substring( 0, lastClasp+1 );
-							textFine       += " " + percent + "%";
-							
-							print.println( textFine );
+							progressBarArray = advanceProgressBar(points, progressBarArray);
 							points++;
 						}
-						monitor.wait( 100 );
+						monitor.wait(100);
 					}
-				} catch ( Exception ex ) {
+				} catch (Exception ex) {
 					closeShell();
-					throw new RuntimeException( ex );
+					throw new RuntimeException(ex);
 				}
 			}
 			
 			//4.Antes de salir volvemos a la barra original
 			try {
-				doClearShell();
-				print.write( this.clearShell.toByteArray() );
-				print.print( MESSAGE_MAIN );
-				charArray = doProgressBar( CHARACTER_END_PROGRESS, "100%" );
-				
-				String textProgressBar = new String( charArray );
-				print.println( textProgressBar );
-				print.println( MESSAGE_FINISH );
+				String textProgressBar = finishProgressBar();
 				MESSAGE_RETURN = MESSAGE_MAIN + textProgressBar + "\n" + MESSAGE_FINISH; 
-			} catch ( Exception ex ) {
-				throw new RuntimeException( ex );
+			} catch (Exception ex) {
+				throw new RuntimeException(ex);
 			} finally {
 				closeShell();
 			}
 			print.print("\n");
 		}
 		
+		private void initialProgressBar() throws IOException 
+		{
+			doClearShell();
+			print.write(this.clearShell.toByteArray());
+			print.print(MESSAGE_MAIN);
+		}
+		
+		private String finishProgressBar() throws IOException 
+		{
+			char[] progressBarArray;
+			initialProgressBar();
+			progressBarArray = doProgressBar(CHARACTER_END_PROGRESS, "100%");
+			
+			String textProgressBar = new String(progressBarArray);
+			print.println(textProgressBar);
+			print.println(MESSAGE_FINISH);
+			return textProgressBar;
+		}
+		
+		private char[] advanceProgressBar(int points, char[] progressBarArray) throws IOException 
+		{
+			initialProgressBar();
+			progressBarArray[points]=CHARACTER_END_PROGRESS;
+			
+			//Calculamos el porciento
+			double percent  = percent(points,0);
+			
+			//Actualizamos el porciento en el texto
+			String textFine = new String(progressBarArray);
+			int lastClasp   = textFine.lastIndexOf(CHARACTER_END_BAR);
+			textFine        = textFine.substring(0, lastClasp+1);
+			textFine       += " "+percent+"%";
+			
+			print.println(textFine);
+			
+			return progressBarArray;
+		}
+		
+		private char[] resume(char[] progressBarArray) throws IOException 
+		{
+			initialProgressBar();
+			progressBarArray = doProgressBar(CHARACTER_BEGIN_PROGRESS, "  0%");
+			print.print(new String(progressBarArray));
+			return progressBarArray;
+		}
+		
 		private void closeShell() 
 		{
 			try {
 				this.clearShell.close();
-				this.clearShell = null;
-			} catch ( IOException e ) {
-				this.clearShell = null;
-			} 
+				this.clearShell=null;
+			} catch (IOException e) {
+				this.clearShell=null;
+			}
 		}
 		
 		private double percent( double number, int decimal ) 
@@ -226,12 +241,12 @@ public class ProgressBarShell {
 		private char[] doProgressBar( char caracter, String fin ) 
 		{
 			StringBuffer sb = new StringBuffer();
-			sb.append( CHARACTER_BEGIN_BAR );
-			for ( int i = 0; i < MAX_POINTER; i++ ) {
-				sb.append( caracter );
+			sb.append(CHARACTER_BEGIN_BAR);
+			for (int i = 0; i < MAX_POINTER; i++) {
+				sb.append(caracter);
 			}
-			sb.append( CHARACTER_END_BAR );
-			sb.append( " " + fin );
+			sb.append(CHARACTER_END_BAR);
+			sb.append(" " + fin);
 			return sb.toString().toCharArray();
 		}
 		
@@ -240,32 +255,30 @@ public class ProgressBarShell {
 		 */
 		private void doClearShell() throws IOException 
 		{
-			if ( this.clearShell != null ) return;
+			if (this.clearShell!=null)return;
 			
-			InputStream in = null;
+			BufferedInputStream buffer = null;
 			try {
 				String so      = System.getProperty("os.name");
 				String command = null;
-				
-				if ( so.equals("Windows") ) {
-					 command = "cls";
+				if (so.equals("Windows")) {
+					command = "cls";
 				} else {
-					 command = "clear";
+					command = "clear";
 				}
 				
-				Process exec    = Runtime.getRuntime().exec( command );
-				in              = exec.getInputStream();
+				Process exec    = Runtime.getRuntime().exec(command);
+				buffer          = new BufferedInputStream(exec.getInputStream());
 				this.clearShell = new ByteArrayOutputStream();
 				
 				int c;
-				byte[] buf = new byte [1024];
-				while ( (c = in.read(buf)) != -1 ) {
-					this.clearShell.write(buf,0,c);
+				while ((c = buffer.read()) != -1) {
+					this.clearShell.write(c);
 				}
-			} catch ( Exception ex ) {
-				throw new IOException( ex.getMessage() );
+			} catch (Exception ex) {
+				throw new IOException(ex.getMessage());
 		    } finally {
-				if (in != null) in.close();
+				if (buffer!=null)buffer.close();
 			}
 		}
 	}

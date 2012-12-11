@@ -1,33 +1,34 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>org.source</groupId>
-  <artifactId>progressBar</artifactId>
-  <version>0.0.1</version>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.source</groupId>
+	<artifactId>progressBar</artifactId>
+	<version>0.0.1</version>
 
-  <name>ProgressBar</name>
-  <description>Proyecto para la creación de una barra de progreso para el Shell</description>
-  <developers>
-  	<developer>
-      <id>vic</id>
-      <name>Victor Duarte</name>
-      <email>delitulmin@gmail.es</email>
-      <url></url>
-      <roles>
-        <role>developer</role>
-      </roles>
-    </developer>
-  </developers>
-  
-<!-- 	<licenses> -->
-<!-- 		<license> -->
-<!-- 			<name>The Apache Software License, Version 2.0</name> -->
-<!-- 			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url> -->
-<!-- 			<distribution>repo</distribution> -->
-<!-- 			<comments>A business-friendly OSS license</comments> -->
-<!-- 		</license> -->
-<!-- 	</licenses> -->
+	<name>ProgressBar</name>
+	<description>Proyecto para la creación de una barra de progreso para el Shell</description>
+	<developers>
+		<developer>
+			<id>vic</id>
+			<name>Victor Duarte</name>
+			<email>delitulmin@gmail.es</email>
+			<url></url>
+			<roles>
+				<role>developer</role>
+			</roles>
+		</developer>
+	</developers>
 
-  <build>
+	<!-- <licenses> -->
+	<!-- <license> -->
+	<!-- <name>The Apache Software License, Version 2.0</name> -->
+	<!-- <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url> -->
+	<!-- <distribution>repo</distribution> -->
+	<!-- <comments>A business-friendly OSS license</comments> -->
+	<!-- </license> -->
+	<!-- </licenses> -->
+
+	<build>
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -37,6 +38,20 @@
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.4</version>
+				<configuration>
+					<useDefaultManifestFile>true</useDefaultManifestFile>
+					<archive>
+						<manifest>
+						     <mainClass>org.source.TestProgressBarShell</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 </project>
+
